@@ -27,9 +27,15 @@ express()
         typeDefs: `
           type Proposal {
             uuid: String!
-            proposal: String
+            data: String
+          }
+          type Standard {
+            uuid: String!
+            version: String!
+            data: String
           }
           type Query {
+            latestStandard: Standard
             proposals: [Proposal]
             proposal(uuid: String!): Proposal
           }
@@ -49,7 +55,11 @@ express()
                 [uuid]
               );
               return rows[0];
-            }
+            },
+            latestStandard: async () => {
+              const { rows } = await pool.query('SELECT * FROM standard ORDER BY uuid DESC LIMIT 1');
+              return rows[0];
+            },
           },
           Mutation: {
             addProposal: async (_, { proposal }) => {
@@ -57,7 +67,7 @@ express()
                 'INSERT INTO proposals (proposal) VALUES ($1) RETURNING uuid',
                 [proposal]
               );
-              return { uuid: rows[0].uuid, proposal };
+              return { uuid: rows[0].uuid, data: proposal };
             }
           },
         },
