@@ -1,0 +1,14 @@
+{
+  "name": "Minder Sync",
+  "description": "Backend support for the voting system of minder",
+  "repository": "https://github.com/davicatunda/minder-sync",
+  "logo": "https://cdn.rawgit.com/heroku/node-js-getting-started/master/public/node.svg",
+  "keywords": [
+    "node",
+    "express",
+    "heroku",
+    "graphql",
+    "postgres"
+  ],
+  "image": "heroku/nodejs"
+}
