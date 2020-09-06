@@ -13,14 +13,11 @@
     "cors": "^2.8.5",
     "express": "^4.15.2",
     "express-graphql": "^0.9.0",
-    "graphql": "^14.6.0",
-    "graphql-tools": "^6.0.11",
-    "pg": "^8.2.1"
+    "graphql": "^14.7.0",
+    "graphql-tools": "^6.2.1",
+    "pg": "^8.3.3"
   },
-  "devDependencies": {
-    "got": "^11.3.0",
-    "tape": "^4.7.0"
-  },
+  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/davicatunda/minder-sync"
