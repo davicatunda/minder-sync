@@ -18,6 +18,18 @@ const pool = new Pool({
   }
 });
 
+async function createContext(req) {
+  const token = req.headers ? req.headers.authorization : null;
+  if (token === '' || token == null) {
+    return null;
+  };
+  const { rows } = await pool.query(
+    'SELECT * FROM users WHERE token = $1',
+    [token]
+  );
+  return { userId: rows[0].uuid };
+}
+
 express()
   .use(cors())
   .use(bodyParser.json())
@@ -117,17 +129,7 @@ express()
           },
         },
       }),
-      context: async () => {
-        const token = req.headers ? req.headers.authorization : null;
-        if (token === '' || token == null) {
-          return null;
-        };
-        const { rows } = await pool.query(
-          'SELECT * FROM users WHERE token = $1',
-          [token]
-        );
-        return { userId: rows[0].uuid };
-      },
+      context: await createContext(req),
       graphiql: true,
     })))
   .listen(PORT, () => console.log(`Listening on ${PORT}`))
