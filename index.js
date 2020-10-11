@@ -4,30 +4,70 @@ const bodyParser = require('body-parser');
 const graphqlHTTP = require('express-graphql');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { Sequelize, DataTypes } = require('sequelize');
 
-const { Pool } = require('pg');
 const { makeExecutableSchema } = require('graphql-tools');
 
 const PORT = process.env.PORT || 5000;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    // TODO: understand this
-    rejectUnauthorized: false
-  }
+const db = new Sequelize(process.env.DATABASE_URL);
+const MyDataTypes = {
+  TablePrimaryKey: {
+    type: DataTypes.UUID,
+    primaryKey: true,
+    defaultValue: DataTypes.UUIDV4,
+  },
+};
+
+// User 
+const UserTable = db.define('User', {
+  uuid: MyDataTypes.TablePrimaryKey,
+  username: DataTypes.STRING,
+  passwordHash: DataTypes.STRING,
+  token: DataTypes.STRING,
 });
+const UserGraphQLTypeDefinition = `
+  type User {
+    uuid: String!
+    username: String!
+    token: String
+  }
+`;
+
+// Standard Proposal
+const StandardProposalTable = db.define('StandardProposal', {
+  uuid: MyDataTypes.TablePrimaryKey,
+  version: DataTypes.STRING,
+  data: DataTypes.TEXT,
+});
+const StandardProposalGraphQLTypeDefinition = `
+  type StandardProposal {
+    uuid: String!
+    version: String!
+    data: String
+  }
+`;
+
+// Proposal
+const ProposalTable = db.define('Proposal', {
+  uuid: MyDataTypes.TablePrimaryKey,
+  data: DataTypes.TEXT,
+});
+const ProposalGraphQLTypeDefinition = `
+  type Proposal {
+    uuid: String!
+    data: String
+  }
+`;
+
 
 async function createContext(req) {
   const token = req.headers ? req.headers.authorization : null;
   if (token === '' || token == null) {
     return null;
   };
-  const { rows } = await pool.query(
-    'SELECT * FROM users WHERE token = $1',
-    [token]
-  );
-  return { userId: rows[0].uuid };
+  const user = await UserTable.findOne({ where: { token } });
+  return { userId: user?.uuid };
 }
 
 express()
@@ -39,23 +79,12 @@ express()
     graphqlHTTP(async req => ({
       schema: makeExecutableSchema({
         typeDefs: `
-          type User {
-            uuid: String!
-            username: String!
-            token: String
-          }
-          type Proposal {
-            uuid: String!
-            data: String
-          }
-          type Standard {
-            uuid: String!
-            version: String!
-            data: String
-          }
+          ${UserGraphQLTypeDefinition}
+          ${ProposalGraphQLTypeDefinition}
+          ${StandardProposalGraphQLTypeDefinition}
           type Query {
             user: User
-            latestStandard: Standard
+            standardProposal: StandardProposal
             proposals: [Proposal]
             proposal(uuid: String!): Proposal
           }
@@ -67,63 +96,35 @@ express()
         `,
         resolvers: {
           Query: {
-            user: async (_, __, { userId }) => {
-              const { rows } = await pool.query(
-                'SELECT * FROM users WHERE uuid = $1',
-                [userId]
-              );
-              return rows ? rows[0] : null;
-            },
+            user: (_, __, { userId }) => UserTable.findOne({ where: { uuid: userId } }),
 
-            proposals: async () => {
-              const { rows } = await pool.query('SELECT * FROM proposals');
-              return rows;
-            },
+            proposals: () => ProposalTable.findAll(),
 
-            proposal: async (_, { uuid }) => {
-              const { rows } = await pool.query(
-                'SELECT * FROM proposals WHERE uuid = $1',
-                [uuid]
-              );
-              return rows[0];
-            },
+            proposal: (_, { uuid }) => ProposalTable.findOne({ where: { uuid } }),
 
-            latestStandard: async () => {
-              const { rows } = await pool.query('SELECT * FROM standard ORDER BY uuid DESC LIMIT 1');
-              return rows[0];
-            },
+            latestStandard: () => await StandardProposalTable.findAll({
+              limit: 1,
+              order: [['createdAt', 'DESC']]
+            }),
           },
           Mutation: {
             addProposal: async (_, { proposal }) => {
-              const { rows } = await pool.query(
-                'INSERT INTO proposals (proposal) VALUES ($1) RETURNING uuid',
-                [proposal]
-              );
-              return { uuid: rows[0].uuid, data: proposal };
+              const newProposal = await ProposalTable.create({ proposal });
+              return { uuid: newProposal.uuid, data: proposal };
             },
 
             login: async (_, { username, password }) => {
-              const { rows } = await pool.query(
-                'SELECT * FROM users WHERE username = $1',
-                [username]
-              );
-              const user = rows[0];
+              const user = await UserTable.findOne({ where: { username } });
               if (!user || !bcrypt.compareSync(password, user.password)) {
                 return null;
               }
               const token = jwt.sign({ id: user.uuid }, process.env.JWT_SECRET);
-              await pool.query(
-                'UPDATE users SET token = $1 WHERE username = $2',
-                [token, username],
-              );
+              await user.update({ token });
               return { token };
             },
 
             logout: async (_, __, { userId }) => {
-              await pool.query(
-                'UPDATE users SET token = NULL WHERE uuid = $1',
-                [userId],
-              );
+              await UserTable.update({ where: { userId } }, { token: null });
               return true;
             }
           },
