@@ -27,6 +27,7 @@ const UserTable = db.define('User', {
   username: DataTypes.STRING,
   passwordHash: DataTypes.STRING,
   token: DataTypes.STRING,
+  votedProposals: { type: DataTypes.ARRAY(DataTypes.UUID), defaultValue: [] },
 });
 
 const UserGraphQLTypeDefinition = `
@@ -137,6 +138,35 @@ const AddProposalMutation = {
   },
 };
 
+const VoteProposalMutation = {
+  definition: 'voteProposal(proposalId: String!, position: Number): Boolean',
+  resolver: {
+    voteProposal: async (_, { proposalId, position }, { userId }) => {
+      if (!userId) {
+        return false;
+      }
+
+      const user = await UserTable.findOne({ where: { uuid: userId } });
+      const votedProposals = user.votedProposals != null ? user.votedProposals : [];
+
+      if (position == null || position <= 0) {
+        await user.update({
+          votedProposals: votedProposals.filter(id => id !== proposalId),
+        });
+      } else if (position > votedProposals.length) {
+        await user.update({
+          votedProposals: votedProposals.concat(proposalId),
+        });
+      } else {
+        await user.update({
+          votedProposals: votedProposals.slice().splice(position - 1, 0, id),
+        });
+      }
+      return true;
+    }
+  },
+};
+
 // Associations
 UserTable.hasMany(ProposalTable);
 ProposalTable.belongsTo(UserTable, { foreignKey: 'userId', onDelete: 'CASCADE' });
@@ -175,6 +205,7 @@ express()
             ${AddProposalMutation.definition},
             ${LoginMutation.definition},
             ${LogoutMutation.definition},
+            ${VoteProposalMutation.definition},
           }
         `,
         resolvers: {
@@ -188,6 +219,7 @@ express()
             ...AddProposalMutation.resolver,
             ...LoginMutation.resolver,
             ...LogoutMutation.resolver,
+            ...VoteProposalMutation.resolver,
           },
         },
       }),
