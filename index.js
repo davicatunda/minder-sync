@@ -22,7 +22,7 @@ const MyDataTypes = {
 /**
  * User
  */
-const UserTable = db.define('User', {
+const UserTable = db.define('user', {
   uuid: MyDataTypes.TablePrimaryKey,
   username: DataTypes.STRING,
   passwordHash: DataTypes.STRING,
@@ -70,7 +70,7 @@ const LogoutMutation = {
 /**
  * Standard Proposal
  */
-const StandardProposalTable = db.define('StandardProposal', {
+const StandardProposalTable = db.define('standardProposal', {
   uuid: MyDataTypes.TablePrimaryKey,
   version: DataTypes.STRING,
   data: DataTypes.TEXT,
@@ -96,7 +96,7 @@ const StandardProposalRootField = {
 /**
  * Proposal
  */
-const ProposalTable = db.define('Proposal', {
+const ProposalTable = db.define('proposal', {
   uuid: MyDataTypes.TablePrimaryKey,
   data: DataTypes.TEXT,
 });
