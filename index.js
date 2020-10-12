@@ -43,7 +43,7 @@ const UserRootField = {
 };
 
 const LoginMutation = {
-  defition: 'login(username: String!, password: String!): String',
+  definition: 'login(username: String!, password: String!): String',
   resolver: {
     login: async (_, { username, password }) => {
       const user = await UserTable.findOne({ where: { username } });
