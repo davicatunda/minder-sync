@@ -67,7 +67,7 @@ async function createContext(req) {
     return null;
   };
   const user = await UserTable.findOne({ where: { token } });
-  return { userId: user?.uuid };
+  return { userId: user.uuid };
 }
 
 express()
@@ -102,7 +102,7 @@ express()
 
             proposal: (_, { uuid }) => ProposalTable.findOne({ where: { uuid } }),
 
-            latestStandard: () => await StandardProposalTable.findAll({
+            latestStandard: () => StandardProposalTable.findAll({
               limit: 1,
               order: [['createdAt', 'DESC']]
             }),
