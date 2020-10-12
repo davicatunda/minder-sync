@@ -28,7 +28,6 @@ const UserTable = db.define('User', {
   passwordHash: DataTypes.STRING,
   token: DataTypes.STRING,
 });
-UserTable.sync({ alter: true });
 
 const UserGraphQLTypeDefinition = `
   type User {
@@ -77,7 +76,6 @@ const StandardProposalTable = db.define('StandardProposal', {
   version: DataTypes.STRING,
   data: DataTypes.TEXT,
 });
-StandardProposalTable.sync({ alter: true });
 
 const StandardProposalGraphQLTypeDefinition = `
   type StandardProposal {
@@ -102,9 +100,9 @@ const StandardProposalRootField = {
  */
 const ProposalTable = db.define('Proposal', {
   uuid: MyDataTypes.TablePrimaryKey,
+  userId: DataTypes.UUID,
   data: DataTypes.TEXT,
 });
-ProposalTable.sync({ alter: true });
 
 const ProposalGraphQLTypeDefinition = `
   type Proposal {
@@ -129,12 +127,22 @@ const ProposalsRootField = {
 const AddProposalMutation = {
   definition: 'addProposal(proposal: String): Proposal',
   resolver: {
-    addProposal: async (_, { proposal }) => {
-      const newProposal = await ProposalTable.create({ data: proposal });
+    addProposal: async (_, { proposal }, { userId }) => {
+      if (!userId) {
+        return null;
+      }
+      const newProposal = await ProposalTable.create({ data: proposal, userId });
       return { uuid: newProposal.uuid, data: proposal };
     }
   },
 };
+
+// Associations
+UserTable.hasMany(ProposalTable);
+ProposalTable.belongsTo(UserTable, { foreignKey: 'userId', onDelete: 'CASCADE' });
+
+// Update all tables
+db.sync({ alter: true });
 
 async function createContext(req) {
   const token = req.headers ? req.headers.authorization : null;
