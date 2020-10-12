@@ -152,15 +152,15 @@ express()
           ${ProposalGraphQLTypeDefinition}
           ${StandardProposalGraphQLTypeDefinition}
           type Query {
-            ${ProposalRootField.definition}
-            ${ProposalsRootField.definition}
-            ${StandardProposalRootField.defintion}
-            ${UserRootField.definition}
+            ${ProposalRootField.definition},
+            ${ProposalsRootField.definition},
+            ${StandardProposalRootField.defintion},
+            ${UserRootField.definition},
           }
           type Mutation {
-            ${AddProposalMutation.definition}
-            ${LoginMutation.definition}
-            ${LogoutMutation.definition}
+            ${AddProposalMutation.definition},
+            ${LoginMutation.definition},
+            ${LogoutMutation.definition},
           }
         `,
         resolvers: {
