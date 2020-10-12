@@ -83,10 +83,10 @@ express()
           ${ProposalGraphQLTypeDefinition}
           ${StandardProposalGraphQLTypeDefinition}
           type Query {
-            user: User
-            standardProposal: StandardProposal
-            proposals: [Proposal]
             proposal(uuid: String!): Proposal
+            proposals: [Proposal]
+            standardProposal: StandardProposal
+            user: User
           }
           type Mutation {
             addProposal(proposal: String): Proposal
@@ -96,16 +96,13 @@ express()
         `,
         resolvers: {
           Query: {
-            user: (_, __, { userId }) => UserTable.findOne({ where: { uuid: userId } }),
-
-            proposals: () => ProposalTable.findAll(),
-
             proposal: (_, { uuid }) => ProposalTable.findOne({ where: { uuid } }),
-
-            latestStandard: () => StandardProposalTable.findAll({
+            proposals: () => ProposalTable.findAll(),
+            standardProposal: () => StandardProposalTable.findAll({
               limit: 1,
               order: [['createdAt', 'DESC']]
             }),
+            user: (_, __, { userId }) => UserTable.findOne({ where: { uuid: userId } }),
           },
           Mutation: {
             addProposal: async (_, { proposal }) => {
