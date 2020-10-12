@@ -89,10 +89,13 @@ const StandardProposalGraphQLTypeDefinition = `
 const StandardProposalRootField = {
   defintion: `standardProposal: StandardProposal`,
   resolver: {
-    standardProposal: () => StandardProposalTable.findAll({
-      limit: 1,
-      order: [['createdAt', 'DESC']]
-    })[0],
+    standardProposal: async () => {
+      const standardProposals = await StandardProposalTable.findAll({
+        limit: 1,
+        order: [['createdAt', 'DESC']]
+      });
+      return standardProposals[0];
+    },
   }
 }
 
