@@ -22,12 +22,14 @@ const MyDataTypes = {
 /**
  * User
  */
-const UserTable = db.define('user', {
+const UserTable = db.define('User', {
   uuid: MyDataTypes.TablePrimaryKey,
   username: DataTypes.STRING,
   passwordHash: DataTypes.STRING,
   token: DataTypes.STRING,
 });
+UserTable.sync({ alter: true });
+
 const UserGraphQLTypeDefinition = `
   type User {
     uuid: String!
@@ -70,11 +72,13 @@ const LogoutMutation = {
 /**
  * Standard Proposal
  */
-const StandardProposalTable = db.define('standardProposal', {
+const StandardProposalTable = db.define('StandardProposal', {
   uuid: MyDataTypes.TablePrimaryKey,
   version: DataTypes.STRING,
   data: DataTypes.TEXT,
 });
+StandardProposalTable.sync({ alter: true });
+
 const StandardProposalGraphQLTypeDefinition = `
   type StandardProposal {
     uuid: String!
@@ -96,10 +100,12 @@ const StandardProposalRootField = {
 /**
  * Proposal
  */
-const ProposalTable = db.define('proposal', {
+const ProposalTable = db.define('Proposal', {
   uuid: MyDataTypes.TablePrimaryKey,
   data: DataTypes.TEXT,
 });
+ProposalTable.sync({ alter: true });
+
 const ProposalGraphQLTypeDefinition = `
   type Proposal {
     uuid: String!
