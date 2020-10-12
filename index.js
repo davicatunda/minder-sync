@@ -92,7 +92,7 @@ const StandardProposalRootField = {
     standardProposal: () => StandardProposalTable.findAll({
       limit: 1,
       order: [['createdAt', 'DESC']]
-    }),
+    })[0],
   }
 }
 
