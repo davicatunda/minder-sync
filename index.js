@@ -139,7 +139,7 @@ const AddProposalMutation = {
 };
 
 const VoteProposalMutation = {
-  definition: 'voteProposal(proposalId: String!, position: Number): Boolean',
+  definition: 'voteProposal(proposalId: String!, position: number): Boolean',
   resolver: {
     voteProposal: async (_, { proposalId, position }, { userId }) => {
       if (!userId) {
