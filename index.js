@@ -54,7 +54,7 @@ const LoginMutation = {
       }
       const token = jwt.sign({ id: user.uuid }, process.env.JWT_SECRET);
       await user.update({ token });
-      return { token };
+      return token;
     },
   },
 };
