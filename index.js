@@ -192,6 +192,9 @@ async function createContext(req) {
     return null;
   };
   const user = await UserTable.findOne({ where: { token } });
+  if (!user) {
+    return null;
+  }
   return { userId: user.uuid };
 }
 
