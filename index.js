@@ -49,7 +49,7 @@ const LoginMutation = {
   resolver: {
     login: async (_, { username, password }) => {
       const user = await UserTable.findOne({ where: { username } });
-      if (!user || !bcrypt.compareSync(password, user.password)) {
+      if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
         return null;
       }
       const token = jwt.sign({ id: user.uuid }, process.env.JWT_SECRET);
