@@ -63,7 +63,8 @@ const LogoutMutation = {
   definition: 'logout: Boolean',
   resolver: {
     logout: async (_, __, { userId }) => {
-      await UserTable.where({ userId }).update({ token: null })
+      const user = await UserTable.findOne({ where: { uuid: userId } });
+      await user.update({ token: null })
       return true;
     }
   },
