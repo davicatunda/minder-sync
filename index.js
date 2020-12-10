@@ -44,7 +44,7 @@ const UserRootField = {
       if (!context || !context.userId) {
         return null;
       }
-      return await UserTable.findOne({ where: { uuid: userId } });
+      return await UserTable.findOne({ where: { uuid: context.userId } });
     },
   },
 };
@@ -71,7 +71,7 @@ const LogoutMutation = {
       if (!context || !context.userId) {
         return false;
       }
-      const user = await UserTable.findOne({ where: { uuid: userId } });
+      const user = await UserTable.findOne({ where: { uuid: context.userId } });
       await user.update({ token: null })
       return true;
     }
@@ -144,7 +144,7 @@ const AddProposalMutation = {
       if (!context || !context.userId) {
         return null;
       }
-      const newProposal = await ProposalTable.create({ data: proposal, userId });
+      const newProposal = await ProposalTable.create({ data: proposal, userId: context.userId });
       return { uuid: newProposal.uuid, data: proposal };
     }
   },
@@ -158,7 +158,7 @@ const VoteProposalMutation = {
         return false;
       }
 
-      const user = await UserTable.findOne({ where: { uuid: userId } });
+      const user = await UserTable.findOne({ where: { uuid: context.userId } });
       const votedProposals = user.votedProposals != null ? user.votedProposals : [];
 
       if (position == null || position <= 0) {
