@@ -40,7 +40,12 @@ const UserGraphQLTypeDefinition = `
 const UserRootField = {
   definition: 'user: User',
   resolver: {
-    user: (_, __, { userId }) => UserTable.findOne({ where: { uuid: userId } }),
+    user: async (_, __, context) => {
+      if (!context?.userId) {
+        return null;
+      }
+      return await UserTable.findOne({ where: { uuid: userId } });
+    },
   },
 };
 
@@ -62,7 +67,10 @@ const LoginMutation = {
 const LogoutMutation = {
   definition: 'logout: Boolean',
   resolver: {
-    logout: async (_, __, { userId }) => {
+    logout: async (_, __, context) => {
+      if (!context?.userId) {
+        return false;
+      }
       const user = await UserTable.findOne({ where: { uuid: userId } });
       await user.update({ token: null })
       return true;
@@ -132,8 +140,8 @@ const ProposalsRootField = {
 const AddProposalMutation = {
   definition: 'addProposal(proposal: String): Proposal',
   resolver: {
-    addProposal: async (_, { proposal }, { userId }) => {
-      if (!userId) {
+    addProposal: async (_, { proposal }, context) => {
+      if (!context?.userId) {
         return null;
       }
       const newProposal = await ProposalTable.create({ data: proposal, userId });
@@ -145,8 +153,8 @@ const AddProposalMutation = {
 const VoteProposalMutation = {
   definition: 'voteProposal(proposalId: String!, position: Int): Boolean',
   resolver: {
-    voteProposal: async (_, { proposalId, position }, { userId }) => {
-      if (!userId) {
+    voteProposal: async (_, { proposalId, position }, context) => {
+      if (!context?.userId) {
         return false;
       }
 
