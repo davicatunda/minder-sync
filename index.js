@@ -41,7 +41,7 @@ const UserRootField = {
   definition: 'user: User',
   resolver: {
     user: async (_, __, context) => {
-      if (!context?.userId) {
+      if (!context || !context.userId) {
         return null;
       }
       return await UserTable.findOne({ where: { uuid: userId } });
@@ -68,7 +68,7 @@ const LogoutMutation = {
   definition: 'logout: Boolean',
   resolver: {
     logout: async (_, __, context) => {
-      if (!context?.userId) {
+      if (!context || !context.userId) {
         return false;
       }
       const user = await UserTable.findOne({ where: { uuid: userId } });
@@ -141,7 +141,7 @@ const AddProposalMutation = {
   definition: 'addProposal(proposal: String): Proposal',
   resolver: {
     addProposal: async (_, { proposal }, context) => {
-      if (!context?.userId) {
+      if (!context || !context.userId) {
         return null;
       }
       const newProposal = await ProposalTable.create({ data: proposal, userId });
@@ -154,7 +154,7 @@ const VoteProposalMutation = {
   definition: 'voteProposal(proposalId: String!, position: Int): Boolean',
   resolver: {
     voteProposal: async (_, { proposalId, position }, context) => {
-      if (!context?.userId) {
+      if (!context || !context.userId) {
         return false;
       }
 
