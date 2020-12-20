@@ -7,6 +7,15 @@ const bcrypt = require('bcrypt');
 const { Sequelize, DataTypes } = require('sequelize');
 
 const { makeExecutableSchema } = require('graphql-tools');
+const { OAuth2Client } = require('google-auth-library');
+const oauthClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+const googleAuth = async (idToken) => {
+  const ticket = await oauthClient.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
+  const payload = ticket.getPayload();
+  const { sub } = payload;
+  return { googleID: sub };
+}
 
 const PORT = process.env.PORT || 5000;
 
@@ -24,17 +33,13 @@ const MyDataTypes = {
  */
 const UserTable = db.define('User', {
   uuid: MyDataTypes.TablePrimaryKey,
-  username: DataTypes.STRING,
-  passwordHash: DataTypes.STRING,
-  token: DataTypes.STRING,
+  googleID: DataTypes.STRING,
   votedProposals: { type: DataTypes.ARRAY(DataTypes.UUID), defaultValue: [] },
 });
 
 const UserGraphQLTypeDefinition = `
   type User {
     uuid: String!
-    username: String!
-    token: String
   }
 `;
 const UserRootField = {
@@ -49,30 +54,33 @@ const UserRootField = {
   },
 };
 
-const LoginMutation = {
-  definition: 'login(username: String!, password: String!): String',
+const SigninMutation = {
+  definition: 'signin(googleToken: String!): String',
   resolver: {
-    login: async (_, { username, password }) => {
-      const user = await UserTable.findOne({ where: { username } });
-      if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
+    signin: async (_, { googleToken }) => {
+      try {
+        const { googleID } = await googleAuth(googleToken);
+        const user = await UserTable.findOne({ where: { googleID } });
+        if (!user) {
+          await UserTable.create({ googleID });
+        }
+        return googleToken;
+      } catch (e) {
+        console.log(e);
         return null;
       }
-      const token = jwt.sign({ id: user.uuid }, process.env.JWT_SECRET);
-      await user.update({ token });
-      return token;
     },
   },
 };
 
-const LogoutMutation = {
-  definition: 'logout: Boolean',
+const DeleteAccountMutation = {
+  definition: 'deleteAccount: Boolean',
   resolver: {
-    logout: async (_, __, context) => {
+    deleteAccount: async (_, __, context) => {
       if (!context || !context.userId) {
         return false;
       }
-      const user = await UserTable.findOne({ where: { uuid: context.userId } });
-      await user.update({ token: null })
+      await UserTable.destroy({ where: { uuid: context.userId } });
       return true;
     }
   },
@@ -191,11 +199,14 @@ async function createContext(req) {
   if (token === '' || token == null) {
     return null;
   };
-  const user = await UserTable.findOne({ where: { token } });
-  if (!user) {
+  try {
+    const { googleID } = await googleAuth(token);
+    const user = await UserTable.findOne({ where: { googleID } });
+    return { userId: user.uuid };
+  } catch (e) {
+    console.log(e);
     return null;
   }
-  return { userId: user.uuid };
 }
 
 express()
@@ -218,8 +229,8 @@ express()
           }
           type Mutation {
             ${AddProposalMutation.definition},
-            ${LoginMutation.definition},
-            ${LogoutMutation.definition},
+            ${SigninMutation.definition},
+            ${DeleteAccountMutation.definition},
             ${VoteProposalMutation.definition},
           }
         `,
@@ -232,8 +243,8 @@ express()
           },
           Mutation: {
             ...AddProposalMutation.resolver,
-            ...LoginMutation.resolver,
-            ...LogoutMutation.resolver,
+            ...SigninMutation.resolver,
+            ...DeleteAccountMutation.resolver,
             ...VoteProposalMutation.resolver,
           },
         },
