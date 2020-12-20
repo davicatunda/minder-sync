@@ -55,20 +55,13 @@ const UserRootField = {
 };
 
 const SigninMutation = {
-  definition: 'signin(googleToken: String!): String',
+  definition: 'signin: Boolean',
   resolver: {
-    signin: async (_, { googleToken }) => {
-      try {
-        const { googleID } = await googleAuth(googleToken);
-        const user = await UserTable.findOne({ where: { googleID } });
-        if (!user) {
-          await UserTable.create({ googleID });
-        }
-        return googleToken;
-      } catch (e) {
-        console.log(e);
-        return null;
+    signin: async (_, __, context) => {
+      if (!context || !context.userId) {
+        return false;
       }
+      return true;
     },
   },
 };
@@ -200,8 +193,11 @@ async function createContext(req) {
     return null;
   };
   try {
-    const { googleID } = await googleAuth(token);
-    const user = await UserTable.findOne({ where: { googleID } });
+    const { googleID } = await googleAuth(googleToken);
+    let user = await UserTable.findOne({ where: { googleID } });
+    if (!user) {
+      user = await UserTable.create({ googleID });
+    }
     return { userId: user.uuid };
   } catch (e) {
     console.log(e);
