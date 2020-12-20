@@ -2,8 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const graphqlHTTP = require('express-graphql');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
 const { Sequelize, DataTypes } = require('sequelize');
 
 const { makeExecutableSchema } = require('graphql-tools');
@@ -193,7 +191,7 @@ async function createContext(req) {
     return null;
   };
   try {
-    const { googleID } = await googleAuth(googleToken);
+    const { googleID } = await googleAuth(token);
     let user = await UserTable.findOne({ where: { googleID } });
     if (!user) {
       user = await UserTable.create({ googleID });
